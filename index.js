@@ -1,3 +1,4 @@
+// index.js
 const express = require('express');
 const dotenv = require('dotenv');
 const axios = require('axios');
@@ -8,24 +9,15 @@ const app = express();
 app.use(express.json());
 
 app.post('/webhook', async (req, res) => {
-  const data = req.body;
-
-  console.log('✅ Webhook primit:', data);
-
-  const status = data.status;
-  const email = data.order_description; // email-ul din webhook
-  const payinHash = data.payin_hash;
+  const { status, order_description: email } = req.body;
+  console.log('✅ Webhook primit:', req.body);
 
   if (status === 'finished' && email) {
     try {
-      // PATCH pe tabela profiles pentru a activa premium
-      const response = await axios.patch(
+      // Activăm is_premium=true în profiles
+      await axios.patch(
         `${process.env.SUPABASE_URL}/rest/v1/profiles?email=eq.${encodeURIComponent(email)}`,
-        {
-          is_premium: true,
-          premium_activated_at: new Date().toISOString(),
-          tx_hash: payinHash || null
-        },
+        { is_premium: true },
         {
           headers: {
             apikey: process.env.SUPABASE_SERVICE_ROLE_KEY,
@@ -37,20 +29,20 @@ app.post('/webhook', async (req, res) => {
       );
 
       console.log(`✨ Premium activat pentru: ${email}`);
-      return res.status(200).send('Premium activat cu succes');
+      return res.status(200).send('Premium setat cu succes');
     } catch (error) {
       if (error.response) {
-        console.error('❌ Eroare Supabase status:', error.response.status);
-        console.error('❌ Eroare Supabase data:', error.response.data);
+        console.error('❌ Supabase update status:', error.response.status);
+        console.error('❌ Supabase update data:', error.response.data);
       } else {
-        console.error('❌ Eroare Supabase:', error.message || error);
+        console.error('❌ Supabase error:', error.message || error);
       }
       return res.status(500).send('Eroare la actualizare Supabase');
     }
-  } else {
-    console.log('ℹ️ Plata nefinalizată sau email lipsă');
-    return res.status(400).send('Webhook ignorat');
   }
+
+  console.log('ℹ️ Plata nefinalizată sau email lipsă');
+  res.status(400).send('Webhook ignorat');
 });
 
 const PORT = process.env.PORT || 3000;
