@@ -1,4 +1,3 @@
-// index.js
 const express = require('express');
 const dotenv = require('dotenv');
 const axios = require('axios');
@@ -8,16 +7,11 @@ dotenv.config();
 const app = express();
 app.use(express.json());
 
-// Endpoint GET simplu pentru ping de la UptimeRobot
-app.get('/', (req, res) => {
-  res.status(200).send('Webhook is live');
-});
-
 app.post('/webhook', async (req, res) => {
-  const { status, order_description: email } = req.body;
+  const { payment_status, order_description: email } = req.body;
   console.log('✅ Webhook primit:', req.body);
 
-  if (status === 'finished' && email) {
+  if (payment_status === 'finished' && email) {
     try {
       // Activăm is_premium=true în profiles
       await axios.patch(
