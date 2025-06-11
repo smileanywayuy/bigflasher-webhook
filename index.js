@@ -8,6 +8,11 @@ dotenv.config();
 const app = express();
 app.use(express.json());
 
+// Endpoint GET simplu pentru ping de la UptimeRobot
+app.get('/', (req, res) => {
+  res.status(200).send('Webhook is live');
+});
+
 app.post('/webhook', async (req, res) => {
   const { status, order_description: email } = req.body;
   console.log('✅ Webhook primit:', req.body);
